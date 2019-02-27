@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="timerArray">
+        <item>1 min</item>
+        <item>5 min</item>
+        <item>15 min</item>
+    </string-array>
+
+    <string-array name="timerValues">
+        <item>1</item>
+        <item>5</item>
+        <item>15</item>
+    </string-array>
+</resources>
