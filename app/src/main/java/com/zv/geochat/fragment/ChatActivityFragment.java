@@ -125,13 +125,17 @@ public class ChatActivityFragment extends Fragment {
                 displayMessage(chatMessage);
             } else if (Constants.BROADCAST_USER_TYPING.equals(action)) {
                 // TODO
+            } else if (Constants.BROADCAST_USER_SESSION_CLOSED.equals(action)) {
+                String sessionMessage = data.getString("sessionClosed");
+                String userName = data.getString(Constants.CHAT_USER_NAME);
+                ChatMessage chatMessage = new ChatMessage(userName, sessionMessage);
+                displayMessage(chatMessage);
             } else {
                 Log.v(TAG, "do nothing for action: " + action);
             }
         }
     };
-
-
+    
     private void registerServiceStateChangeReceiver() {
         Log.d(TAG, "registering service state change receiver...");
         IntentFilter intentFilter = new IntentFilter();
@@ -141,6 +145,7 @@ public class ChatActivityFragment extends Fragment {
         intentFilter.addAction(Constants.BROADCAST_SERVER_NOT_CONNECTED);
         intentFilter.addAction(Constants.BROADCAST_USER_JOINED);
         intentFilter.addAction(Constants.BROADCAST_USER_LEFT);
+        intentFilter.addAction(Constants.BROADCAST_USER_SESSION_CLOSED);
         getActivity().registerReceiver(mServiceStateChangeReceiver, intentFilter);
     }
 }

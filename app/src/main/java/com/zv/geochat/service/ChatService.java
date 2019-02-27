@@ -217,16 +217,21 @@ public class ChatService extends Service {
         sendBroadcast(intent);
     }
 
-    private void sendBroadcastSessionClosed(String chatSessionTime) {
+    private void sendBroadcastSessionClosed(String chatSessionTime, String userName) {
         Log.d(TAG, "->(+)<- sending broadcast: BROADCAST_USER_SESSION_CLOSED");
-        String sessionMessage = "Session closed after reaching the limit: " + chatSessionTime + " min";
         Intent intent = new Intent();
-        intent.putExtra("sessionClosed", sessionMessage);
         intent.setAction(Constants.BROADCAST_USER_SESSION_CLOSED);
+        String sessionMessage = "Session closed after reaching the limit: " + chatSessionTime + " min";
+
+        Bundle data = new Bundle();
+        data.putString("sessionClosed", sessionMessage);
+        data.putString(Constants.CHAT_USER_NAME, userName);
+        intent.putExtras(data);
+
         sendBroadcast(intent);
     }
 
-    // Receive several time broadcast actions
+    // Receive time broadcast actions
     private class TimerBroadcastReceiver extends BroadcastReceiver {
 
         @Override
@@ -246,7 +251,7 @@ public class ChatService extends Service {
                 Log.d(TAG, "Chat session length is: " + currentSessionLength + " min");
 
                 if (currentSessionTimeMin >= Long.valueOf(myTimer)){
-                    sendBroadcastSessionClosed(myTimer);
+                    sendBroadcastSessionClosed(myTimer, myName);
                     stopSelf();
                 }
 
