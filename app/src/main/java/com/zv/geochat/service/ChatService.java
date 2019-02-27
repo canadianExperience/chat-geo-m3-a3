@@ -2,7 +2,10 @@ package com.zv.geochat.service;
 
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.Bundle;
@@ -16,8 +19,13 @@ import com.zv.geochat.model.ChatMessage;
 import com.zv.geochat.notification.NotificationDecorator;
 import com.zv.geochat.provider.ChatMessageStore;
 
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+
 public class ChatService extends Service {
-    private static final String TAG = "ChatService";
+    private static final String TAG = "myTAG:ChatService";
 
     public static final String CMD = "msg_cmd";
     public static final int CMD_JOIN_CHAT = 10;
@@ -33,6 +41,12 @@ public class ChatService extends Service {
 
     private String myName;
 
+    TimerBroadcastReceiver mReceiver;
+    private IntentFilter time_intentFilter;
+
+    private Date startSessionTime;
+
+
     public ChatService() {
     }
 
@@ -47,6 +61,17 @@ public class ChatService extends Service {
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
+
+        mReceiver = new TimerBroadcastReceiver();
+
+        time_intentFilter = new IntentFilter();
+        time_intentFilter.addAction(Intent.ACTION_TIME_TICK);
+        time_intentFilter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
+        time_intentFilter.addAction(Intent.ACTION_TIME_CHANGED);
+
+        registerReceiver(mReceiver, time_intentFilter);
+
+        startSessionTime = new Date();
     }
 
     @Override
@@ -70,6 +95,8 @@ public class ChatService extends Service {
         notificationMgr.cancelAll();
         Log.v(TAG, "releasing wake lock");
         wakeLock.release();
+
+        unregisterReceiver(mReceiver);
         super.onDestroy();
     }
 
@@ -109,7 +136,7 @@ public class ChatService extends Service {
         } else if (command == CMD_RECEIVE_MESSAGE) {
             String testUser = "Test User";
             String testMessage = "Simulated Message";
-            notificationDecorator.displayExpandableNotification("New message...: "+ testUser, testMessage);
+            notificationDecorator.displayExpandableNotification("New message...: " + testUser, testMessage);
             chatMessageStore.insert(new ChatMessage(testUser, testMessage));
             sendBroadcastNewMessage(testUser, testMessage);
         } else {
@@ -183,5 +210,30 @@ public class ChatService extends Service {
         Intent intent = new Intent();
         intent.setAction(Constants.BROADCAST_USER_TYPING);
         sendBroadcast(intent);
+    }
+
+    // Receive several time broadcast actions
+    private class TimerBroadcastReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            if (action.equals(Intent.ACTION_TIME_TICK) ||
+                    action.equals(Intent.ACTION_TIME_CHANGED) ||
+                    action.equals(Intent.ACTION_TIMEZONE_CHANGED)) {
+
+                // Find chat session length
+                Date currentTime = new Date();
+                long timeDifference =  currentTime.getTime() - startSessionTime.getTime();
+                long currentSessionTimeMin = TimeUnit.MILLISECONDS.toMinutes(timeDifference);
+
+                String currentSessionLength = Long.toString(currentSessionTimeMin);
+                        Log.d(TAG, "Chat session length is: " + currentSessionLength + " min");
+            }
+
+
+        }
+
     }
 }
