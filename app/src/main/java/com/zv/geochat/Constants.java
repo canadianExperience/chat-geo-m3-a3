@@ -24,4 +24,6 @@ public interface Constants {
     String CHAT_USER_NAME = "CHAT_USER_NAME";
     String CHAT_MESSAGE = "CHAT_MESSAGE";
 
+    String BROADCAST_USER_SESSION_CLOSED = "BROADCAST_USER_SESSION_CLOSED";
+
 }

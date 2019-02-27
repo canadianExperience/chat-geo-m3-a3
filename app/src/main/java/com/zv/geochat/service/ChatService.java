@@ -19,8 +19,6 @@ import com.zv.geochat.model.ChatMessage;
 import com.zv.geochat.notification.NotificationDecorator;
 import com.zv.geochat.provider.ChatMessageStore;
 
-import java.text.Format;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -40,6 +38,7 @@ public class ChatService extends Service {
     private ChatMessageStore chatMessageStore;
 
     private String myName;
+    private String myTimer;
 
     TimerBroadcastReceiver mReceiver;
     private IntentFilter time_intentFilter;
@@ -58,6 +57,7 @@ public class ChatService extends Service {
         notificationDecorator = new NotificationDecorator(this, notificationMgr);
         chatMessageStore = new ChatMessageStore(this);
         loadUserNameFromPreferences();
+        loadChatSessionTimerFromPreferences();
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
@@ -149,6 +149,11 @@ public class ChatService extends Service {
         myName = prefs.getString(Constants.PREF_KEY_USER_NAME, "Default Name");
     }
 
+    private void loadChatSessionTimerFromPreferences() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        myTimer = prefs.getString(Constants.PREF_KEY_TIMER, "Default Timer");
+    }
+
 
     // broadcasts
     private void sendBroadcastNotConnected() {
@@ -212,6 +217,15 @@ public class ChatService extends Service {
         sendBroadcast(intent);
     }
 
+    private void sendBroadcastSessionClosed(String chatSessionTime) {
+        Log.d(TAG, "->(+)<- sending broadcast: BROADCAST_USER_SESSION_CLOSED");
+        String sessionMessage = "Session closed after reaching the limit: " + chatSessionTime + " min";
+        Intent intent = new Intent();
+        intent.putExtra("sessionClosed", sessionMessage);
+        intent.setAction(Constants.BROADCAST_USER_SESSION_CLOSED);
+        sendBroadcast(intent);
+    }
+
     // Receive several time broadcast actions
     private class TimerBroadcastReceiver extends BroadcastReceiver {
 
@@ -229,11 +243,14 @@ public class ChatService extends Service {
                 long currentSessionTimeMin = TimeUnit.MILLISECONDS.toMinutes(timeDifference);
 
                 String currentSessionLength = Long.toString(currentSessionTimeMin);
-                        Log.d(TAG, "Chat session length is: " + currentSessionLength + " min");
+                Log.d(TAG, "Chat session length is: " + currentSessionLength + " min");
+
+                if (currentSessionTimeMin >= Long.valueOf(myTimer)){
+                    sendBroadcastSessionClosed(myTimer);
+                    stopSelf();
+                }
+
             }
-
-
         }
-
     }
 }
