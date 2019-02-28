@@ -126,16 +126,15 @@ public class ChatActivityFragment extends Fragment {
             } else if (Constants.BROADCAST_USER_TYPING.equals(action)) {
                 // TODO
             } else if (Constants.BROADCAST_USER_SESSION_CLOSED.equals(action)) {
-                String sessionMessage = data.getString("sessionClosed");
-                String userName = data.getString(Constants.CHAT_USER_NAME);
-                ChatMessage chatMessage = new ChatMessage(userName, sessionMessage);
+                String sessionMessage = intent.getStringExtra("sessionClosed");
+                ChatMessage chatMessage = new ChatMessage(null, sessionMessage);
                 displayMessage(chatMessage);
             } else {
                 Log.v(TAG, "do nothing for action: " + action);
             }
         }
     };
-    
+
     private void registerServiceStateChangeReceiver() {
         Log.d(TAG, "registering service state change receiver...");
         IntentFilter intentFilter = new IntentFilter();
